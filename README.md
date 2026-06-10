@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Panel Casino21
 
-## Getting Started
+Panel de gestión de caja para casino (cargas, retiros, cuentas, turnos, auditoría, notificaciones).
 
-First, run the development server:
+## Instalación en una PC servidor (red local)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Requisitos previos: instalar [Node.js LTS](https://nodejs.org) y [Git](https://git-scm.com/download/win).
+
+```powershell
+git clone https://github.com/caja21/server-v2.git casino-panel
+cd casino-panel
+.\install.ps1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+El script `install.ps1` instala dependencias, crea la base de datos, carga datos de ejemplo, compila el proyecto y abre el puerto 3000 en el firewall.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Iniciar el servidor
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+.\start.ps1
+```
 
-## Learn More
+Luego, desde cualquier PC de la red, abrir en el navegador:
 
-To learn more about Next.js, take a look at the following resources:
+```
+http://IP-DE-LA-PC-SERVIDOR:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usuarios de ejemplo (cambiar la contraseña después del primer login)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `admin` / `admin123` (rol ADMIN)
+- `operador1` / `operador123` (rol OPERADOR)
 
-## Deploy on Vercel
+## Mantener el servidor corriendo en segundo plano (opcional)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```powershell
+npm install -g pm2
+pm2 start npm --name casino-panel -- run start -- -- -H 0.0.0.0
+pm2 save
+pm2 startup
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Actualizar a la última versión
+
+```powershell
+git pull
+npm install
+npx prisma migrate deploy
+npm run build
+```
