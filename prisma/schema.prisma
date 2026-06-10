@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Role: ADMIN | OPERADOR
+// EstadoCuenta: ACTIVA | INACTIVA
+// TipoMovimiento: CARGA | RETIRO
+// EstadoMovimiento: PENDIENTE | ACEPTADO | RECHAZADO
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  nombre    String
+  rol       String   @default("OPERADOR")
+  oficina   String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  cuentas      CuentaBancaria[]
+  movimientos  Movimiento[]
+  turnos       Turno[]
+  auditLogs    AuditLog[]
+  transferencias AccountTransfer[]
+  notificaciones Notificacion[]
+  notificacionesLeidas NotificacionLeida[]
+}
+
+model CuentaBancaria {
+  id        Int      @id @default(autoincrement())
+  oficina   String
+  billetera String
+  nombre    String
+  alias     String?
+  cbu       String?
+  estado    String   @default("ACTIVA")
+  saldoBase Float    @default(0)
+  totalDescargado Float @default(0)
+  esSegura  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  operadorId Int?
+  operador   Usuario? @relation(fields: [operadorId], references: [id])
+
+  movimientos Movimiento[]
+  transferenciasOrigen  AccountTransfer[] @relation("TransferOrigen")
+  transferenciasDestino AccountTransfer[] @relation("TransferDestino")
+}
+
+model Movimiento {
+  id        Int      @id @default(autoincrement())
+  tipo      String
+  cliente   String
+  titular   String?
+  monto     Float
+  bono      Float    @default(0)
+  estado    String   @default("PENDIENTE")
+  createdAt DateTime @default(now())
+
+  operadorId Int?
+  operador   Usuario? @relation(fields: [operadorId], references: [id])
+
+  cuentaId Int?
+  cuenta   CuentaBancaria? @relation(fields: [cuentaId], references: [id])
+
+  turnoId Int?
+  turno   Turno? @relation(fields: [turnoId], references: [id])
+}
+
+// EstadoTurno: ABIERTO | CERRADO
+model Turno {
+  id        Int      @id @default(autoincrement())
+  estado    String   @default("ABIERTO")
+  saldoInicial Float @default(0)
+  saldoFinal   Float?
+  totalCargas  Float @default(0)
+  totalRetiros Float @default(0)
+  saldoTeoricoCierre Float?
+  saldoRealCierre    Float?
+  diferencia         Float?
+  startTime DateTime @default(now())
+  endTime   DateTime?
+
+  operadorId Int
+  operador   Usuario @relation(fields: [operadorId], references: [id])
+
+  movimientos Movimiento[]
+}
+
+model AccountTransfer {
+  id      Int      @id @default(autoincrement())
+  monto   Float
+  motivo  String?
+  createdAt DateTime @default(now())
+
+  origenId Int
+  origen   CuentaBancaria @relation("TransferOrigen", fields: [origenId], references: [id])
+
+  destinoId Int
+  destino   CuentaBancaria @relation("TransferDestino", fields: [destinoId], references: [id])
+
+  creadoPorId Int
+  creadoPor   Usuario @relation(fields: [creadoPorId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  accion    String
+  detalles  String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  usuarioId Int?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+}
+
+// ParaRoles: "todos" | "ADMIN" | "OPERADOR" | "ADMIN,OPERADOR"
+model Notificacion {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  mensaje   String
+  paraRoles String   @default("todos")
+  createdAt DateTime @default(now())
+
+  creadoPorId Int?
+  creadoPor   Usuario? @relation(fields: [creadoPorId], references: [id])
+
+  leidas NotificacionLeida[]
+}
+
+model NotificacionLeida {
+  notificacionId Int
+  notificacion   Notificacion @relation(fields: [notificacionId], references: [id])
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  leidaAt DateTime @default(now())
+
+  @@id([notificacionId, usuarioId])
+}
