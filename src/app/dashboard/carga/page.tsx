@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/components/toast";
 import Button from "@/components/button";
+import { formatMoney } from "@/lib/format";
 
 type Cuenta = {
   id: number;
@@ -20,11 +21,16 @@ export default function CargaPage() {
   const [cliente, setCliente] = useState("");
   const [titular, setTitular] = useState("");
   const [monto, setMonto] = useState("");
-  const [bono, setBono] = useState("");
+  const [bonoPct, setBonoPct] = useState("");
   const [cuentaId, setCuentaId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+
+  const montoNum = Number(monto) || 0;
+  const bonoPctNum = Number(bonoPct) || 0;
+  const bonoMonto = (montoNum * bonoPctNum) / 100;
+  const totalAcreditar = montoNum + bonoMonto;
 
   const fetchCuentas = useCallback(async () => {
     const res = await fetch("/api/cuentas");
@@ -56,7 +62,7 @@ export default function CargaPage() {
         cliente,
         titular: tipo === "RETIRO" ? titular || null : null,
         monto,
-        bono: tipo === "CARGA" ? bono || 0 : 0,
+        bono: tipo === "CARGA" ? bonoMonto : 0,
         cuentaId,
       }),
     });
@@ -72,7 +78,7 @@ export default function CargaPage() {
     setCliente("");
     setTitular("");
     setMonto("");
-    setBono("");
+    setBonoPct("");
   }
 
   return (
@@ -149,15 +155,29 @@ export default function CargaPage() {
 
         {tipo === "CARGA" && (
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Bono</label>
+            <label className="block text-sm text-slate-300 mb-1">Bono (%)</label>
             <input
               type="number"
               min="0"
+              step="0.01"
               className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              value={bono}
-              onChange={(e) => setBono(e.target.value)}
+              value={bonoPct}
+              onChange={(e) => setBonoPct(e.target.value)}
               placeholder="0"
             />
+          </div>
+        )}
+
+        {tipo === "CARGA" && montoNum > 0 && (
+          <div className="rounded-md bg-slate-800/60 border border-slate-700 px-3 py-2 space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">Bono ({bonoPctNum || 0}%)</span>
+              <span className="font-mono text-slate-300">{formatMoney(bonoMonto)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">Total a acreditar</span>
+              <span className="font-mono font-semibold text-emerald-400">{formatMoney(totalAcreditar)}</span>
+            </div>
           </div>
         )}
 
