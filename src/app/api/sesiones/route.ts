@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, Number(params.get("page") || "1"));
   const pageSize = 50;
 
-  const where: Record<string, unknown> = { accion: "LOGIN" };
+  const where: Record<string, unknown> = { accion: { in: ["LOGIN", "LOGOUT"] } };
   if (operadorId) where.usuarioId = Number(operadorId);
   if (desde || hasta) {
     const createdAt: Record<string, Date> = {};

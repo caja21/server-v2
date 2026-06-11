@@ -5,6 +5,7 @@ import { formatDateTime } from "@/lib/format";
 
 type Sesion = {
   id: number;
+  accion: string;
   createdAt: string;
   ip: string | null;
   usuario: { nombre: string; username: string; rol: string } | null;
@@ -105,6 +106,7 @@ export default function SesionesPage() {
               <th className="text-left p-3">Fecha/Hora</th>
               <th className="text-left p-3">Usuario</th>
               <th className="text-left p-3">Rol</th>
+              <th className="text-left p-3">Acción</th>
               <th className="text-left p-3">IP</th>
             </tr>
           </thead>
@@ -118,7 +120,7 @@ export default function SesionesPage() {
             )}
             {!loading && sesiones.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-slate-400">
+                <td colSpan={5} className="p-8 text-center text-slate-400">
                   Sin registros
                 </td>
               </tr>
@@ -137,6 +139,17 @@ export default function SesionesPage() {
                   )}
                 </td>
                 <td className="p-3 text-slate-400">{s.usuario?.rol || "-"}</td>
+                <td className="p-3">
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      s.accion === "LOGIN"
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-slate-700/40 text-slate-400"
+                    }`}
+                  >
+                    {s.accion === "LOGIN" ? "Inicio" : "Cierre"}
+                  </span>
+                </td>
                 <td className="p-3 text-slate-400 font-mono text-xs">{s.ip || "-"}</td>
               </tr>
             ))}

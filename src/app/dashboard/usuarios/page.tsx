@@ -18,6 +18,7 @@ type Usuario = {
 
 type Sesion = {
   id: number;
+  accion: string;
   createdAt: string;
   ip: string | null;
 };
@@ -314,6 +315,7 @@ export default function UsuariosPage() {
               <thead className="bg-slate-900 text-slate-400 sticky top-0">
                 <tr>
                   <th className="text-left p-2">Fecha/Hora</th>
+                  <th className="text-left p-2">Acción</th>
                   <th className="text-left p-2">IP</th>
                 </tr>
               </thead>
@@ -321,6 +323,17 @@ export default function UsuariosPage() {
                 {sesiones.map((s) => (
                   <tr key={s.id} className="border-t border-slate-800">
                     <td className="p-2 whitespace-nowrap text-slate-400">{formatDateTime(s.createdAt)}</td>
+                    <td className="p-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          s.accion === "LOGIN"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-slate-700/40 text-slate-400"
+                        }`}
+                      >
+                        {s.accion === "LOGIN" ? "Inicio" : "Cierre"}
+                      </span>
+                    </td>
                     <td className="p-2 font-mono text-xs text-slate-400">{s.ip || "-"}</td>
                   </tr>
                 ))}
