@@ -6,21 +6,53 @@ export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const operadorIdParam = req.nextUrl.searchParams.get("operadorId");
+  const params = req.nextUrl.searchParams;
+  const operadorIdParam = params.get("operadorId");
+  const desde = params.get("desde");
+  const hasta = params.get("hasta");
+  const all = params.get("all");
+  const page = Math.max(1, Number(params.get("page") || "1"));
+  const pageSize = 50;
 
   let where: Record<string, unknown>;
   if (session.rol === "ADMIN") {
-    where = operadorIdParam ? { operadorId: Number(operadorIdParam) } : { estado: "CERRADO" };
+    if (all) {
+      where = {};
+    } else {
+      where = operadorIdParam ? { operadorId: Number(operadorIdParam) } : { estado: "CERRADO" };
+    }
+    if (operadorIdParam && all) where.operadorId = Number(operadorIdParam);
   } else {
     where = { estado: "CERRADO", operadorId: session.id };
   }
 
-  const turnos = await prisma.turno.findMany({
-    where,
-    orderBy: { startTime: "desc" },
-    take: 50,
-    include: { operador: { select: { nombre: true, username: true } } },
-  });
+  if (all && (desde || hasta)) {
+    const startTime: Record<string, Date> = {};
+    if (desde) startTime.gte = new Date(desde);
+    if (hasta) startTime.lte = new Date(`${hasta}T23:59:59.999`);
+    where.startTime = startTime;
+  }
 
-  return NextResponse.json(turnos);
+  if (!all) {
+    const turnos = await prisma.turno.findMany({
+      where,
+      orderBy: { startTime: "desc" },
+      take: 50,
+      include: { operador: { select: { nombre: true, username: true } } },
+    });
+    return NextResponse.json(turnos);
+  }
+
+  const [turnos, total] = await Promise.all([
+    prisma.turno.findMany({
+      where,
+      orderBy: { startTime: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { operador: { select: { nombre: true, username: true } } },
+    }),
+    prisma.turno.count({ where }),
+  ]);
+
+  return NextResponse.json({ turnos, total, page, pageSize });
 }

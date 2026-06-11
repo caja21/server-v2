@@ -14,6 +14,7 @@ const links = [
   { href: "/dashboard/turnos", label: "Turnos", roles: ["ADMIN"] },
   { href: "/dashboard/notificaciones", label: "Notificaciones", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/historial", label: "Historial de Cargas", roles: ["ADMIN"] },
+  { href: "/dashboard/sesiones", label: "Historial de Sesiones", roles: ["ADMIN"] },
   { href: "/dashboard/reportes", label: "Reporte de Operadores", roles: ["ADMIN"] },
   { href: "/dashboard/auditoria", label: "Auditoría", roles: ["ADMIN"] },
   { href: "/dashboard/usuarios", label: "Usuarios", roles: ["ADMIN"] },
