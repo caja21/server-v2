@@ -20,6 +20,28 @@ type Promocion = {
 
 const emptyForm = { titulo: "", mensaje: "", paraRoles: "OPERADOR", intervaloMinutos: "" };
 
+function Countdown({ target }: { target: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const restante = Math.max(0, target - now);
+  if (restante === 0) return <span className="text-amber-400">Pendiente de reaparecer</span>;
+
+  const totalSeg = Math.ceil(restante / 1000);
+  const min = Math.floor(totalSeg / 60);
+  const seg = totalSeg % 60;
+
+  return (
+    <span>
+      Vuelve a sonar en {min}:{seg.toString().padStart(2, "0")}
+    </span>
+  );
+}
+
 export default function PromocionesPage() {
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,9 +166,21 @@ export default function PromocionesPage() {
                   {p.intervaloMinutos ? ` · Repite cada ${p.intervaloMinutos} min` : ""}
                 </p>
                 {p.completadas.length > 0 && (
-                  <p className="text-xs text-emerald-400 mt-2">
-                    Completado por: {p.completadas.map((c) => c.usuario.nombre).join(", ")}
-                  </p>
+                  <div className="text-xs text-emerald-400 mt-2 space-y-1">
+                    {p.completadas.map((c) => (
+                      <p key={c.usuarioId}>
+                        Completado por {c.usuario.nombre} a las {formatDateTime(c.completadaAt)}
+                        {p.intervaloMinutos && (
+                          <>
+                            {" · "}
+                            <Countdown
+                              target={new Date(c.completadaAt).getTime() + p.intervaloMinutos * 60000}
+                            />
+                          </>
+                        )}
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="flex gap-2 shrink-0">
