@@ -1,12 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const where = session.rol === "ADMIN" ? { estado: "CERRADO" } : { estado: "CERRADO", operadorId: session.id };
+  const operadorIdParam = req.nextUrl.searchParams.get("operadorId");
+
+  let where: Record<string, unknown>;
+  if (session.rol === "ADMIN") {
+    where = operadorIdParam ? { operadorId: Number(operadorIdParam) } : { estado: "CERRADO" };
+  } else {
+    where = { estado: "CERRADO", operadorId: session.id };
+  }
 
   const turnos = await prisma.turno.findMany({
     where,

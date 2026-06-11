@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/components/toast";
 import Button from "@/components/button";
-import { ConfirmDialog } from "@/components/modal";
-import { formatDateTime } from "@/lib/format";
+import { ConfirmDialog, Modal } from "@/components/modal";
+import { formatDateTime, formatMoney } from "@/lib/format";
 
 type Usuario = {
   id: number;
@@ -14,6 +14,18 @@ type Usuario = {
   oficina: string | null;
   activo: boolean;
   createdAt: string;
+};
+
+type Sesion = {
+  id: number;
+  estado: string;
+  saldoInicial: number;
+  saldoFinal: number | null;
+  totalCargas: number;
+  totalRetiros: number;
+  diferencia: number | null;
+  startTime: string;
+  endTime: string | null;
 };
 
 const emptyForm = {
@@ -32,6 +44,9 @@ export default function UsuariosPage() {
   const [error, setError] = useState("");
   const [passwords, setPasswords] = useState<Record<number, string>>({});
   const [deleting, setDeleting] = useState<Usuario | null>(null);
+  const [verSesiones, setVerSesiones] = useState<Usuario | null>(null);
+  const [sesiones, setSesiones] = useState<Sesion[]>([]);
+  const [loadingSesiones, setLoadingSesiones] = useState(false);
   const { showToast } = useToast();
 
   const fetchData = useCallback(async () => {
@@ -89,6 +104,14 @@ export default function UsuariosPage() {
       const updated = await res.json();
       setUsuarios((prev) => prev.map((x) => (x.id === u.id ? updated : x)));
     }
+  }
+
+  async function abrirSesiones(u: Usuario) {
+    setVerSesiones(u);
+    setLoadingSesiones(true);
+    const res = await fetch(`/api/turnos?operadorId=${u.id}`);
+    if (res.ok) setSesiones(await res.json());
+    setLoadingSesiones(false);
   }
 
   async function cambiarPassword(u: Usuario) {
@@ -214,8 +237,16 @@ export default function UsuariosPage() {
             )}
             {usuarios.map((u) => (
               <tr key={u.id} className="border-t border-slate-800 hover:bg-slate-900/50">
-                <td className="p-3">{u.username}</td>
-                <td className="p-3">{u.nombre}</td>
+                <td className="p-3">
+                  <button onClick={() => abrirSesiones(u)} className="text-emerald-400 hover:underline">
+                    {u.username}
+                  </button>
+                </td>
+                <td className="p-3">
+                  <button onClick={() => abrirSesiones(u)} className="hover:underline">
+                    {u.nombre}
+                  </button>
+                </td>
                 <td className="p-3">
                   <select
                     className="rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs"
@@ -273,6 +304,59 @@ export default function UsuariosPage() {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        open={!!verSesiones}
+        onClose={() => setVerSesiones(null)}
+        title={`Historial de sesiones - ${verSesiones?.nombre || ""}`}
+      >
+        {loadingSesiones ? (
+          <p className="text-slate-400 text-center py-6">Cargando...</p>
+        ) : sesiones.length === 0 ? (
+          <p className="text-slate-400 text-center py-6">Sin sesiones registradas</p>
+        ) : (
+          <div className="overflow-x-auto max-h-[60vh]">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-900 text-slate-400 sticky top-0">
+                <tr>
+                  <th className="text-left p-2">Inicio</th>
+                  <th className="text-left p-2">Cierre</th>
+                  <th className="text-left p-2">Estado</th>
+                  <th className="text-right p-2">Cargas</th>
+                  <th className="text-right p-2">Retiros</th>
+                  <th className="text-right p-2">Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sesiones.map((s) => (
+                  <tr key={s.id} className="border-t border-slate-800">
+                    <td className="p-2 whitespace-nowrap text-slate-400">{formatDateTime(s.startTime)}</td>
+                    <td className="p-2 whitespace-nowrap text-slate-400">
+                      {s.endTime ? formatDateTime(s.endTime) : "-"}
+                    </td>
+                    <td className="p-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          s.estado === "ABIERTO"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-slate-700/40 text-slate-400"
+                        }`}
+                      >
+                        {s.estado}
+                      </span>
+                    </td>
+                    <td className="p-2 font-mono text-right text-emerald-400">{formatMoney(s.totalCargas)}</td>
+                    <td className="p-2 font-mono text-right text-red-400">{formatMoney(s.totalRetiros)}</td>
+                    <td className="p-2 font-mono text-right">
+                      {s.diferencia !== null ? formatMoney(s.diferencia) : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={!!deleting}
