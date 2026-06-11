@@ -14,10 +14,29 @@ type Promocion = {
 
 export const LOGOUT_CHECK_EVENT = "casino:check-logout-promos";
 
+function playBeep() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = 880;
+    gain.gain.value = 0.15;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+    osc.onended = () => ctx.close();
+  } catch {
+    // ignore audio errors (e.g. autoplay restrictions)
+  }
+}
+
 export default function PromoPopup() {
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [completing, setCompleting] = useState<number | null>(null);
   const pendingLogout = useRef(false);
+  const alarmInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
 
   async function fetchPendientes() {
@@ -56,6 +75,24 @@ export default function PromoPopup() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (promociones.length > 0) {
+      if (!alarmInterval.current) {
+        playBeep();
+        alarmInterval.current = setInterval(playBeep, 3000);
+      }
+    } else if (alarmInterval.current) {
+      clearInterval(alarmInterval.current);
+      alarmInterval.current = null;
+    }
+    return () => {
+      if (alarmInterval.current) {
+        clearInterval(alarmInterval.current);
+        alarmInterval.current = null;
+      }
+    };
+  }, [promociones.length]);
 
   async function completar(id: number) {
     setCompleting(id);
