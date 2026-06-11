@@ -32,6 +32,8 @@ model Usuario {
   transferencias AccountTransfer[]
   notificaciones Notificacion[]
   notificacionesLeidas NotificacionLeida[]
+  promociones Promocion[]
+  promocionesCompletadas PromocionCompletada[]
 }
 
 model CuentaBancaria {
@@ -134,6 +136,33 @@ model Notificacion {
   creadoPor   Usuario? @relation(fields: [creadoPorId], references: [id])
 
   leidas NotificacionLeida[]
+}
+
+// ParaRoles: "todos" | "ADMIN" | "OPERADOR" | "ADMIN,OPERADOR"
+model Promocion {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  mensaje   String
+  paraRoles String   @default("OPERADOR")
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  creadoPorId Int?
+  creadoPor   Usuario? @relation(fields: [creadoPorId], references: [id])
+
+  completadas PromocionCompletada[]
+}
+
+model PromocionCompletada {
+  promocionId Int
+  promocion   Promocion @relation(fields: [promocionId], references: [id])
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  completadaAt DateTime @default(now())
+
+  @@id([promocionId, usuarioId])
 }
 
 model NotificacionLeida {

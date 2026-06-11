@@ -12,6 +12,7 @@ const links = [
   { href: "/dashboard/cuentas", label: "Cuentas Bancarias", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/descarga", label: "Descarga de Cuentas", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/notificaciones", label: "Notificaciones", roles: ["ADMIN", "OPERADOR"] },
+  { href: "/dashboard/promociones", label: "Promociones", roles: ["ADMIN"] },
   { href: "/dashboard/historial", label: "Historial de Cargas", roles: ["ADMIN"] },
   { href: "/dashboard/sesiones", label: "Inicios de Sesión", roles: ["ADMIN"] },
   { href: "/dashboard/reportes", label: "Reporte de Operadores", roles: ["ADMIN"] },
