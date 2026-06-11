@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/auth";
-import { getTotalBalance } from "@/lib/balance";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   const { username, password } = await req.json();
@@ -25,13 +25,8 @@ export async function POST(req: NextRequest) {
     oficina: user.oficina,
   });
 
-  const turnoExistente = await prisma.turno.findFirst({
-    where: { operadorId: user.id, estado: "ABIERTO" },
-  });
-  if (!turnoExistente) {
-    const saldoInicial = await getTotalBalance();
-    await prisma.turno.create({ data: { operadorId: user.id, saldoInicial } });
-  }
+  const ip = req.headers.get("x-forwarded-for");
+  await logAudit(user.id, "LOGIN", undefined, ip);
 
   return NextResponse.json({ ok: true });
 }

@@ -32,11 +32,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
 
-  const turnoActivo = await prisma.turno.findFirst({
-    where: { operadorId: session.id, estado: "ABIERTO" },
-    select: { id: true },
-  });
-
   const movimiento = await prisma.movimiento.create({
     data: {
       tipo,
@@ -47,7 +42,6 @@ export async function POST(req: NextRequest) {
       cuentaId: Number(cuentaId),
       operadorId: session.id,
       estado: "ACEPTADO",
-      turnoId: turnoActivo?.id || null,
     },
     include: {
       operador: { select: { nombre: true, username: true, oficina: true } },

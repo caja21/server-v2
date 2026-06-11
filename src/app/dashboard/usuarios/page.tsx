@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/components/toast";
 import Button from "@/components/button";
 import { ConfirmDialog, Modal } from "@/components/modal";
-import { formatDateTime, formatMoney } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 type Usuario = {
   id: number;
@@ -18,14 +18,8 @@ type Usuario = {
 
 type Sesion = {
   id: number;
-  estado: string;
-  saldoInicial: number;
-  saldoFinal: number | null;
-  totalCargas: number;
-  totalRetiros: number;
-  diferencia: number | null;
-  startTime: string;
-  endTime: string | null;
+  createdAt: string;
+  ip: string | null;
 };
 
 const emptyForm = {
@@ -109,8 +103,8 @@ export default function UsuariosPage() {
   async function abrirSesiones(u: Usuario) {
     setVerSesiones(u);
     setLoadingSesiones(true);
-    const res = await fetch(`/api/turnos?operadorId=${u.id}`);
-    if (res.ok) setSesiones(await res.json());
+    const res = await fetch(`/api/sesiones?operadorId=${u.id}`);
+    if (res.ok) setSesiones((await res.json()).sesiones);
     setLoadingSesiones(false);
   }
 
@@ -308,48 +302,26 @@ export default function UsuariosPage() {
       <Modal
         open={!!verSesiones}
         onClose={() => setVerSesiones(null)}
-        title={`Historial de sesiones - ${verSesiones?.nombre || ""}`}
+        title={`Inicios de sesión - ${verSesiones?.nombre || ""}`}
       >
         {loadingSesiones ? (
           <p className="text-slate-400 text-center py-6">Cargando...</p>
         ) : sesiones.length === 0 ? (
-          <p className="text-slate-400 text-center py-6">Sin sesiones registradas</p>
+          <p className="text-slate-400 text-center py-6">Sin registros</p>
         ) : (
           <div className="overflow-x-auto max-h-[60vh]">
             <table className="w-full text-sm">
               <thead className="bg-slate-900 text-slate-400 sticky top-0">
                 <tr>
-                  <th className="text-left p-2">Inicio</th>
-                  <th className="text-left p-2">Cierre</th>
-                  <th className="text-left p-2">Estado</th>
-                  <th className="text-right p-2">Cargas</th>
-                  <th className="text-right p-2">Retiros</th>
-                  <th className="text-right p-2">Diferencia</th>
+                  <th className="text-left p-2">Fecha/Hora</th>
+                  <th className="text-left p-2">IP</th>
                 </tr>
               </thead>
               <tbody>
                 {sesiones.map((s) => (
                   <tr key={s.id} className="border-t border-slate-800">
-                    <td className="p-2 whitespace-nowrap text-slate-400">{formatDateTime(s.startTime)}</td>
-                    <td className="p-2 whitespace-nowrap text-slate-400">
-                      {s.endTime ? formatDateTime(s.endTime) : "-"}
-                    </td>
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          s.estado === "ABIERTO"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-slate-700/40 text-slate-400"
-                        }`}
-                      >
-                        {s.estado}
-                      </span>
-                    </td>
-                    <td className="p-2 font-mono text-right text-emerald-400">{formatMoney(s.totalCargas)}</td>
-                    <td className="p-2 font-mono text-right text-red-400">{formatMoney(s.totalRetiros)}</td>
-                    <td className="p-2 font-mono text-right">
-                      {s.diferencia !== null ? formatMoney(s.diferencia) : "-"}
-                    </td>
+                    <td className="p-2 whitespace-nowrap text-slate-400">{formatDateTime(s.createdAt)}</td>
+                    <td className="p-2 font-mono text-xs text-slate-400">{s.ip || "-"}</td>
                   </tr>
                 ))}
               </tbody>

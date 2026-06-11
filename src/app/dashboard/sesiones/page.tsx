@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { formatMoney, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 type Sesion = {
   id: number;
-  estado: string;
-  saldoInicial: number;
-  saldoFinal: number | null;
-  totalCargas: number;
-  totalRetiros: number;
-  saldoTeoricoCierre: number | null;
-  saldoRealCierre: number | null;
-  diferencia: number | null;
-  startTime: string;
-  endTime: string | null;
-  operador: { nombre: string; username: string };
+  createdAt: string;
+  ip: string | null;
+  usuario: { nombre: string; username: string; rol: string } | null;
 };
 
 type Operador = { id: number; nombre: string; username: string };
@@ -37,16 +29,15 @@ export default function SesionesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    params.set("all", "1");
     if (operadorId) params.set("operadorId", operadorId);
     if (desde) params.set("desde", desde);
     if (hasta) params.set("hasta", hasta);
     params.set("page", String(page));
 
-    const res = await fetch(`/api/turnos?${params.toString()}`);
+    const res = await fetch(`/api/sesiones?${params.toString()}`);
     if (res.ok) {
       const data = await res.json();
-      setSesiones(data.turnos);
+      setSesiones(data.sesiones);
       setTotal(data.total);
     }
     setLoading(false);
@@ -70,8 +61,8 @@ export default function SesionesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Historial de Sesiones</h1>
-        <span className="text-xs text-slate-400">{total} sesiones</span>
+        <h1 className="text-xl font-bold">Inicios de Sesión</h1>
+        <span className="text-xs text-slate-400">{total} registros</span>
       </div>
 
       <div className="mb-4 p-4 rounded-lg border border-slate-800 bg-slate-900 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -80,7 +71,7 @@ export default function SesionesPage() {
           value={operadorId}
           onChange={(e) => setOperadorId(e.target.value)}
         >
-          <option value="">Todos los operadores</option>
+          <option value="">Todos los usuarios</option>
           {operadores.map((o) => (
             <option key={o.id} value={o.id}>
               {o.nombre} ({o.username})
@@ -111,64 +102,42 @@ export default function SesionesPage() {
         <table className="w-full text-sm">
           <thead className="bg-slate-900 text-slate-400">
             <tr>
-              <th className="text-left p-3">Operador</th>
-              <th className="text-left p-3">Inicio</th>
-              <th className="text-left p-3">Cierre</th>
-              <th className="text-left p-3">Estado</th>
-              <th className="text-right p-3">Cargas</th>
-              <th className="text-right p-3">Retiros</th>
-              <th className="text-right p-3">Saldo Teórico</th>
-              <th className="text-right p-3">Saldo Real</th>
-              <th className="text-right p-3">Diferencia</th>
+              <th className="text-left p-3">Fecha/Hora</th>
+              <th className="text-left p-3">Usuario</th>
+              <th className="text-left p-3">Rol</th>
+              <th className="text-left p-3">IP</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-slate-400">
+                <td colSpan={4} className="p-8 text-center text-slate-400">
                   Cargando...
                 </td>
               </tr>
             )}
             {!loading && sesiones.length === 0 && (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-slate-400">
-                  Sin sesiones
+                <td colSpan={4} className="p-8 text-center text-slate-400">
+                  Sin registros
                 </td>
               </tr>
             )}
             {sesiones.map((s) => (
               <tr key={s.id} className="border-t border-slate-800 hover:bg-slate-900/50">
+                <td className="p-3 whitespace-nowrap text-slate-400">{formatDateTime(s.createdAt)}</td>
                 <td className="p-3">
-                  <div>{s.operador.nombre}</div>
-                  <div className="text-xs text-slate-400">{s.operador.username}</div>
+                  {s.usuario ? (
+                    <>
+                      <div>{s.usuario.nombre}</div>
+                      <div className="text-xs text-slate-400">{s.usuario.username}</div>
+                    </>
+                  ) : (
+                    "-"
+                  )}
                 </td>
-                <td className="p-3 text-slate-400 whitespace-nowrap">{formatDateTime(s.startTime)}</td>
-                <td className="p-3 text-slate-400 whitespace-nowrap">
-                  {s.endTime ? formatDateTime(s.endTime) : "-"}
-                </td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      s.estado === "ABIERTO"
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-slate-700/40 text-slate-400"
-                    }`}
-                  >
-                    {s.estado}
-                  </span>
-                </td>
-                <td className="p-3 font-mono text-right text-emerald-400">{formatMoney(s.totalCargas)}</td>
-                <td className="p-3 font-mono text-right text-red-400">{formatMoney(s.totalRetiros)}</td>
-                <td className="p-3 font-mono text-right">{formatMoney(s.saldoTeoricoCierre || 0)}</td>
-                <td className="p-3 font-mono text-right">{formatMoney(s.saldoRealCierre || 0)}</td>
-                <td
-                  className={`p-3 font-mono text-right font-semibold ${
-                    Math.abs(s.diferencia || 0) > 0.01 ? "text-red-400" : "text-emerald-400"
-                  }`}
-                >
-                  {s.diferencia !== null ? formatMoney(s.diferencia) : "-"}
-                </td>
+                <td className="p-3 text-slate-400">{s.usuario?.rol || "-"}</td>
+                <td className="p-3 text-slate-400 font-mono text-xs">{s.ip || "-"}</td>
               </tr>
             ))}
           </tbody>
