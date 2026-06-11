@@ -38,3 +38,30 @@ export async function PATCH(
 
   return NextResponse.json(usuario);
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session || session.rol !== "ADMIN") {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  if (Number(id) === session.id) {
+    return NextResponse.json({ error: "No podés eliminar tu propio usuario" }, { status: 400 });
+  }
+
+  try {
+    await prisma.usuario.delete({ where: { id: Number(id) } });
+  } catch {
+    return NextResponse.json(
+      { error: "No se puede eliminar: el usuario tiene movimientos u otros registros asociados" },
+      { status: 400 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}

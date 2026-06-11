@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/components/toast";
 import Button from "@/components/button";
+import { ConfirmDialog } from "@/components/modal";
 import { formatDateTime } from "@/lib/format";
 
 type Usuario = {
@@ -29,6 +30,8 @@ export default function UsuariosPage() {
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [passwords, setPasswords] = useState<Record<number, string>>({});
+  const [deleting, setDeleting] = useState<Usuario | null>(null);
   const { showToast } = useToast();
 
   const fetchData = useCallback(async () => {
@@ -86,6 +89,35 @@ export default function UsuariosPage() {
       const updated = await res.json();
       setUsuarios((prev) => prev.map((x) => (x.id === u.id ? updated : x)));
     }
+  }
+
+  async function cambiarPassword(u: Usuario) {
+    const password = passwords[u.id];
+    if (!password) return;
+    const res = await fetch(`/api/usuarios/${u.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) {
+      setPasswords((prev) => ({ ...prev, [u.id]: "" }));
+      showToast("Contraseña actualizada", "success");
+    } else {
+      showToast("Error al actualizar contraseña", "error");
+    }
+  }
+
+  async function eliminarUsuario() {
+    if (!deleting) return;
+    const res = await fetch(`/api/usuarios/${deleting.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setUsuarios((prev) => prev.filter((u) => u.id !== deleting.id));
+      showToast("Usuario eliminado", "success");
+    } else {
+      const data = await res.json();
+      showToast(data.error || "Error al eliminar usuario", "error");
+    }
+    setDeleting(null);
   }
 
   async function cambiarOficina(u: Usuario, oficina: string) {
@@ -168,12 +200,14 @@ export default function UsuariosPage() {
               <th className="text-left p-3">Agente</th>
               <th className="text-left p-3">Creación</th>
               <th className="text-left p-3">Estado</th>
+              <th className="text-left p-3">Contraseña</th>
+              <th className="text-left p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400">
+                <td colSpan={8} className="p-8 text-center text-slate-400">
                   Cargando...
                 </td>
               </tr>
@@ -215,11 +249,40 @@ export default function UsuariosPage() {
                     {u.activo ? "Activo" : "Inactivo"}
                   </button>
                 </td>
+                <td className="p-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      placeholder="Nueva contraseña"
+                      value={passwords[u.id] || ""}
+                      onChange={(e) => setPasswords((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                      className="w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs"
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => cambiarPassword(u)}>
+                      Guardar
+                    </Button>
+                  </div>
+                </td>
+                <td className="p-3">
+                  <Button size="sm" variant="destructive" onClick={() => setDeleting(u)}>
+                    Eliminar
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={!!deleting}
+        title="Eliminar usuario"
+        message={`¿Eliminar al usuario "${deleting?.nombre}" (${deleting?.username})? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="destructive"
+        onConfirm={eliminarUsuario}
+        onCancel={() => setDeleting(null)}
+      />
     </div>
   );
 }

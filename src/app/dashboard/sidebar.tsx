@@ -11,7 +11,7 @@ const links = [
   { href: "/dashboard/movimientos", label: "Movimientos en Vivo", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/cuentas", label: "Cuentas Bancarias", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/descarga", label: "Descarga de Cuentas", roles: ["ADMIN", "OPERADOR"] },
-  { href: "/dashboard/turnos", label: "Turnos", roles: ["ADMIN", "OPERADOR"] },
+  { href: "/dashboard/turnos", label: "Turnos", roles: ["ADMIN"] },
   { href: "/dashboard/notificaciones", label: "Notificaciones", roles: ["ADMIN", "OPERADOR"] },
   { href: "/dashboard/reportes", label: "Reporte de Operadores", roles: ["ADMIN"] },
   { href: "/dashboard/auditoria", label: "Auditoría", roles: ["ADMIN"] },
