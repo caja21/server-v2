@@ -12,12 +12,13 @@ type Promocion = {
   mensaje: string;
   paraRoles: string;
   activa: boolean;
+  intervaloMinutos: number | null;
   createdAt: string;
   creadoPor: { nombre: string; username: string } | null;
   completadas: { usuarioId: number; completadaAt: string; usuario: { nombre: string; username: string } }[];
 };
 
-const emptyForm = { titulo: "", mensaje: "", paraRoles: "OPERADOR" };
+const emptyForm = { titulo: "", mensaje: "", paraRoles: "OPERADOR", intervaloMinutos: "" };
 
 export default function PromocionesPage() {
   const [promociones, setPromociones] = useState<Promocion[]>([]);
@@ -101,15 +102,28 @@ export default function PromocionesPage() {
             value={newForm.mensaje}
             onChange={(e) => setNewForm({ ...newForm, mensaje: e.target.value })}
           />
-          <select
-            className="rounded bg-slate-800 border border-slate-700 px-2 py-1.5 text-sm"
-            value={newForm.paraRoles}
-            onChange={(e) => setNewForm({ ...newForm, paraRoles: e.target.value })}
-          >
-            <option value="OPERADOR">Solo Operadores</option>
-            <option value="ADMIN">Solo Admins</option>
-            <option value="todos">Todos</option>
-          </select>
+          <div className="flex gap-3">
+            <select
+              className="rounded bg-slate-800 border border-slate-700 px-2 py-1.5 text-sm"
+              value={newForm.paraRoles}
+              onChange={(e) => setNewForm({ ...newForm, paraRoles: e.target.value })}
+            >
+              <option value="OPERADOR">Solo Operadores</option>
+              <option value="ADMIN">Solo Admins</option>
+              <option value="todos">Todos</option>
+            </select>
+            <input
+              type="number"
+              min={1}
+              placeholder="Repetir cada (min)"
+              className="rounded bg-slate-800 border border-slate-700 px-2 py-1.5 text-sm w-40"
+              value={newForm.intervaloMinutos}
+              onChange={(e) => setNewForm({ ...newForm, intervaloMinutos: e.target.value })}
+            />
+          </div>
+          <p className="text-xs text-slate-500">
+            Si indicás un intervalo, el recordatorio volverá a aparecer cada esa cantidad de minutos hasta que se desactive.
+          </p>
           <Button onClick={crearPromocion}>Enviar</Button>
         </div>
       )}
@@ -127,6 +141,7 @@ export default function PromocionesPage() {
                 <p className="text-sm text-slate-300 mt-1 whitespace-pre-wrap">{p.mensaje}</p>
                 <p className="text-xs text-slate-400 mt-2">
                   {formatDateTime(p.createdAt)} · Para: {p.paraRoles}
+                  {p.intervaloMinutos ? ` · Repite cada ${p.intervaloMinutos} min` : ""}
                 </p>
                 {p.completadas.length > 0 && (
                   <p className="text-xs text-emerald-400 mt-2">

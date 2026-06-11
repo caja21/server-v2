@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { titulo, mensaje, paraRoles } = body;
+  const { titulo, mensaje, paraRoles, intervaloMinutos } = body;
   if (!titulo || !mensaje) {
     return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       titulo,
       mensaje,
       paraRoles: paraRoles || "OPERADOR",
+      intervaloMinutos: intervaloMinutos ? Number(intervaloMinutos) : null,
       creadoPorId: session.id,
     },
   });

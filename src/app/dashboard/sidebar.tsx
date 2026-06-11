@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { SessionPayload } from "@/lib/auth";
+import { LOGOUT_CHECK_EVENT } from "./promo-popup";
 
 const links = [
   { href: "/dashboard/resumen", label: "Dashboard", roles: ["ADMIN", "OPERADOR"] },
@@ -32,7 +33,6 @@ function initials(nombre: string) {
 
 export default function Sidebar({ session }: { session: SessionPayload }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
 
@@ -51,10 +51,8 @@ export default function Sidebar({ session }: { session: SessionPayload }) {
     return () => clearInterval(interval);
   }, []);
 
-  async function handleLogout() {
-    await fetch("/api/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+  function handleLogout() {
+    window.dispatchEvent(new Event(LOGOUT_CHECK_EVENT));
   }
 
   const visibleLinks = links.filter((l) => l.roles.includes(session.rol));

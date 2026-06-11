@@ -145,6 +145,7 @@ model Promocion {
   mensaje   String
   paraRoles String   @default("OPERADOR")
   activa    Boolean  @default(true)
+  intervaloMinutos Int?
   createdAt DateTime @default(now())
 
   creadoPorId Int?

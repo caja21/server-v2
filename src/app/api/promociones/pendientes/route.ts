@@ -10,11 +10,44 @@ export async function GET() {
     where: {
       activa: true,
       OR: [{ paraRoles: "todos" }, { paraRoles: { contains: session.rol } }],
-      completadas: { none: { usuarioId: session.id } },
     },
     orderBy: { createdAt: "asc" },
-    select: { id: true, titulo: true, mensaje: true, createdAt: true },
+    select: {
+      id: true,
+      titulo: true,
+      mensaje: true,
+      createdAt: true,
+      intervaloMinutos: true,
+      completadas: { where: { usuarioId: session.id }, select: { completadaAt: true } },
+    },
   });
 
-  return NextResponse.json(promociones);
+  const ahora = Date.now();
+  const pendientes = [];
+  const vencidas: number[] = [];
+
+  for (const p of promociones) {
+    const completada = p.completadas[0];
+    if (!completada) {
+      pendientes.push(p);
+      continue;
+    }
+    if (p.intervaloMinutos) {
+      const vencimiento = new Date(completada.completadaAt).getTime() + p.intervaloMinutos * 60000;
+      if (ahora >= vencimiento) {
+        vencidas.push(p.id);
+        pendientes.push(p);
+      }
+    }
+  }
+
+  if (vencidas.length > 0) {
+    await prisma.promocionCompletada.deleteMany({
+      where: { usuarioId: session.id, promocionId: { in: vencidas } },
+    });
+  }
+
+  return NextResponse.json(
+    pendientes.map((p) => ({ id: p.id, titulo: p.titulo, mensaje: p.mensaje, createdAt: p.createdAt }))
+  );
 }
