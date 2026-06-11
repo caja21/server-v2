@@ -3,5 +3,5 @@ export function formatMoney(value: number): string {
 }
 
 export function formatDateTime(value: string | Date): string {
-  return new Date(value).toLocaleString("es-AR");
+  return new Date(value).toLocaleString("es-AR", { hour12: false });
 }
